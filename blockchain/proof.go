@@ -1,5 +1,15 @@
 package blockchain
 
+import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/binary"
+	"fmt"
+	"log"
+	"math"
+	"math/big"
+)
+
 //Take Data from Block
 
 //create a counter (nonce) which starts at 0
@@ -31,8 +41,52 @@ func (pow *ProofOfWork) InitData(nonce int) []byte {
 		[][] byte {
 			pow.Block.PrevHash,
 			pow.Block.Data,
+			ToHex(int64(nonce)),
+			ToHex(int64(Difficulty)),
 		},
 		[]byte{},
 	)
 	return data
 }//end initData
+
+func (pow *ProofOfWork) Run() (int, []byte) {
+	 var intHash big.Int
+	 var hash [32]byte
+
+	 nonce := 0 
+	 for nonce < math.MaxInt64 {
+		 data = pow.InitData(nonce)
+		hash = sha256.Sum256()
+
+		fmt.Printf("\rx%", hash)
+		intHash.SetBytes(hash[:])
+
+		if intHash.Cmp() == -1 {
+			break
+		} else {
+			nonce++
+		}
+	 }//end for
+	 fmt.Println()
+	 return nonce, hash[:]
+}//end Run()
+
+func (pow *ProofOfWork) Validate() bool {
+	var intHash big.Int
+
+	data := pow.InitData(pow.Block.Nonce)
+
+	hash := sha256.Sum256(data)
+	intHash.SetBytes(hash[:])
+
+	return intHash.Cmp(pow.Target) == -1
+}//end validate
+
+func ToHex(num int64) []byte {
+	buff := new(bytes.Buffer)
+	err := binary.write(buff, binary.BigEndian, num )
+	if err != nil {
+		log.Panic("Can't convert to Hex: ", err )
+	}
+	return buff.Bytes
+}//end ToHex
